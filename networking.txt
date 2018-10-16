@@ -1,0 +1,126 @@
+ping: sends an echo request and is received by operating system
+      on the server; doesn't hit web-server. ping not based on http
+
+nc = netcat. can connect to various servers. eg nc en.wikipedia 80
+all nc does is connect to a port and send a string. it doesn't know
+anything about forming http requests
+
+Layer       Protocols           Concepts
+Application   HTTP, SSH         URLs, passwords
+Transport     TCP, UDP          port numbers, sessions
+Internet      IP                IP addresses, routes
+Hardware      wifi, ethernet,   signal strength, ap
+              dsl
+
+each layer depends on layers below. it also provides guarantees to layer above
+like offering and using apis.
+
+port numbers distinguish different server programs running on the same server
+so a program that listens on a tcp port is a server.
+ports 0 - 1023 reserved for programs started by superuser
+
+a program listening on a specific port spawns many threads so it can deal with many
+requests
+
+sudo lsof -i   will give list of network programs listening on ports
+
+every message split into packets; every packet has ip address of sending machine
+and destination machine.
+host = machine on the internet, esp one that has services
+
+DNS: translate host name into ip address (IPV4) the A-record
+DNS is world wide distributed network of records.
+browsers look up the ip address
+creator of website has to setup DNS records for it. means register domain name with an ip address
+the `host` command lets you lookup records in DNS. it queries your OSs name service which sends a request to the DNS service your computer is configured to superuser
+there are many record types in DNS. A records are the ones that give you the IPV4 address
+there are several root DNS servers in world. these direct requests to TLD servers. these direct to server for particular domain
+
+a single webserver can handle multiple websites which it
+tells apart by their domain names: www.example.com v. www.example.net
+  --> on Apache this is "virtual host" configuration
+  --> on Nginx it is "multiple server blocks"
+  --> this is why http requests have a HOST: header. Tells the server the domain you want
+  --> webapps set cookies for particular domain names
+  --> SSL issued for particular domains
+
+  www.example.com is a subdomain of example.com
+  test.www.example.com is a subdomain of www.example.com
+
+IPv4 - dotted quads, each part 1 byte or 8 bits = an octet
+
+computers on same (home/business) network share an IP prefix.
+the prefix can be of varying sizes
+the longer the prefix, the fewer distinct addresses
+the prefix is determined when you set up the network
+the prefix is designed by /n   where n is the size of the prefix
+
+subnet mask
+111.....11100..000  where the 1s are the prefix
+so if we had 24 1s and 8 0s the subnet mask would be 255.255.255.0
+
+if we have 171.64.0.0 /14 then because the second octet is not fixed
+the netblock is all addresses starting with 171.64, 171.65, 171.66, 171.67
+
+Hosts (computers) don't have Ip addresses...Interfaces on hosts have IP
+ie a computer has ethernet interface, wifi interface, loopback interface, tunnel interface, vm interface...
+
+loopback interface usually has ip address of 127.0.0.1 and hostname localhost
+
+router: has one interface to isp (WAN), multiple to ethernet or wifi ap
+your computers are on the LAN
+
+a router is a device that connects two different ip networks
+host on a LAN knows about default gateway which is an outward facing router
+a router can lead to another router which has a default gateway....
+but eventually there is a part of internet that is defaultless where
+routers on major isp know about global routing table = directory all public ip networks. no default gateways here.
+
+computers on same switch or wifi ap or local hardware are on same LAN and can send packets
+to each other without going to a router and they have ip addresses on same netblock
+
+show default gateway: ip route show default or netstat -nr
+
+NAT: ISPs assign one ip address to each home or office router.
+the router assigns private addresses to the devices on the LAN
+private ip addresses come off one of three reserved ip netblocks:
+10.0.0.0 / 8, 172.16.0.0 /12, 192.168.0.0 /16
+private ip addresses used with NAT...network address translation
+the router maintains list of which private addresses and ports are connected to which public ip adresses and ports
+
+webservers see the public router address, not your private ip address
+
+IPv6 = 128 bits, 16 octets
+
+Before TCP and Webserver exchange data they send packets to setup the connection (length is zero in the response header)
+
+Connection: keep-alive header...means the second request will use the same connection
+
+TCP connection: client and server must exchange info to set up Connection
+client sends server message with its ip address and port number requesting Connection
+TCP adds sequence number and acknowledge to packets
+
+TCP packets have section for flags such as SYN, FIN, acknowledge
+Three way TCP handshake to set up Connection
+Four way teardown
+
+TCP dropping packets important performance control
+
+TCP has built in timers. If takes too long hear back from server will drop connection
+
+Firewalls are 'devices' to filter traffic into or out of networks
+Firewall is in a class of devices called middleboxes
+middleboxes inspect, modify, filter, load balancers...
+Firewalls can be (should be?) separate from client / servers
+
+Most common: make firewall drop all traffic except to
+supported (host, port) pairs that are ok for the servers
+One reason many non web apps use HTTP as a transport is that HTTP often unblocked at firewalls when other ports are unblocked
+middleboxes can alter traffic, replace web page with message (ie block site)
+
+NAT devices can overlap with firewalls. Typical home routers commandbe both NAT and simple firewalls
+remember NAT works at IP level...
+
+Web proxy works at HTTP level, takes queries from browsers and sends them outwardto
+web servers. Can be used for caching. Traffic from a web proxy
+looks like it came from same public IP
